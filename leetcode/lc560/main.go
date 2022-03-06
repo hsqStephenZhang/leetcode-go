@@ -31,7 +31,20 @@ import "fmt"
 // }
 
 func subarraySum(nums []int, k int) int {
-
+	m := make(map[int][]int)
+	prefix := make([]int, len(nums)+1)
+	sum := 0
+	m[0] = []int{0}
+	prefix[0] = 0
+	for idx, v := range nums {
+		sum += v
+		prefix[idx+1] = sum
+		if m[sum] == nil {
+			m[sum] = []int{idx + 1}
+		} else {
+			m[sum] = append(m[sum], idx+1)
+		}
+	}
 	return 1
 }
 
