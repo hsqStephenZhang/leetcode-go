@@ -75,12 +75,13 @@ func Infix2Postfix(infix string) []string {
 		default:
 			for !opStack.Empty() {
 				op, _ := opStack.Top()
-				if op == "(" || opPriorityCmp(op.(string), ch) {
+				if opPriorityCmp(op.(string), ch) {
 					break
 				}
 				postfix = append(postfix, op.(string))
 				opStack.Pop()
 			}
+			// handle "(-1)" kind of negtive number
 			if ch == "-" {
 				idx := i - 1
 				for ; idx >= 0; idx-- {
@@ -114,6 +115,7 @@ func opPriorityCmp(op1, op2 string) bool {
 	case "(":
 		return true
 	}
+	// otherwise, op1's priority is less or equal than op2
 	return false
 }
 
@@ -123,10 +125,16 @@ func calculate(s string) int {
 	idx := 0
 	for ; idx < len(postfix); idx++ {
 		ch := postfix[idx]
+		// if the string is one digit
 		if unicode.IsDigit(rune(ch[0])) {
 			val, _ := strconv.Atoi(ch)
 			valStack.Push(val)
-		} else {
+		} else { // the string is an operator
+			if ch == NEG {
+				val, _ := valStack.Pop()
+				valStack.Push(-val.(int))
+				continue
+			}
 			right, _ := valStack.Pop()
 			left, _ := valStack.Pop()
 			rightVal, _ := right.(int)
@@ -140,9 +148,6 @@ func calculate(s string) int {
 				valStack.Push(leftVal * rightVal)
 			case "/":
 				valStack.Push(leftVal / rightVal)
-			case NEG:
-				valStack.Push(leftVal)
-				valStack.Push(-rightVal)
 			}
 		}
 	}
@@ -151,7 +156,7 @@ func calculate(s string) int {
 }
 
 func main() {
-	s := "(1+(4+5+2)-3)+(6+8)"
+	s := "1+2*3+(4*5+6)*7"
 	fmt.Println(Infix2Postfix(s))
 	fmt.Println(calculate(s))
 }
