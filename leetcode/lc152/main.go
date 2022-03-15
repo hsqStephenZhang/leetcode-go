@@ -2,36 +2,52 @@ package main
 
 import "fmt"
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func findMin(nums []int) int {
-	length := len(nums)
-	if length == 1 {
+func maxProduct(nums []int) int {
+	if len(nums) == 1 {
 		return nums[0]
 	}
+	// 以 nums[i] 结尾的乘积绝对值最大的子序列乘积
+	posDp := make([]int, len(nums)+1)
+	negDp := make([]int, len(nums)+1)
+	posDp[0] = 0
+	negDp[0] = 0
 
-	low := 0
-	high := length - 1
-	minVal := 100000000
-	for low <= high {
-		mid := low + (high-low)/2
-		if nums[mid] >= nums[low] {
-			minVal = min(minVal, nums[low])
-			low = mid + 1
+	maxP := 0
+
+	for idx, num := range nums {
+		if num == 0 {
+			posDp[idx+1] = 0
+			negDp[idx+1] = 0
+		} else if num > 0 {
+			if posDp[idx] == 0 {
+				posDp[idx+1] = num
+			} else {
+				posDp[idx+1] = num * posDp[idx]
+			}
+			if negDp[idx] == 0 {
+				negDp[idx+1] = 0
+			} else {
+				negDp[idx+1] = negDp[idx] * num
+			}
 		} else {
-			high = mid - 1
-			minVal = min(minVal, nums[mid])
+			if posDp[idx] == 0 {
+				negDp[idx+1] = num
+			} else {
+				negDp[idx+1] = num * posDp[idx]
+			}
+			if negDp[idx] == 0 {
+				posDp[idx+1] = 0
+			} else {
+				posDp[idx+1] = negDp[idx] * num
+			}
+		}
+		if posDp[idx+1] > maxP {
+			maxP = posDp[idx+1]
 		}
 	}
-	return minVal
+	return maxP
 }
 
 func main() {
-	nums := []int{3, 1, 2}
-	fmt.Println(findMin(nums))
+	fmt.Println(maxProduct([]int{2, 0, -2, 4, -2}))
 }

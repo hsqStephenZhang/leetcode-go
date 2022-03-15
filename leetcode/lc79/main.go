@@ -2,43 +2,36 @@ package main
 
 import "fmt"
 
-type State struct {
-	row, col int
-}
-
 func exist(board [][]byte, word string) bool {
-	memory := make(map[State]bool)
 	for i := 0; i < len(board); i++ {
 		for j := 0; j < len(board[0]); j++ {
-			val, ok := memory[State{i, j}]
-			if !ok || !val {
-				if dfs(board, i, j, 0, word, memory) {
-					return true
-				}
+			if dfs(board, i, j, 0, word) {
+				return true
 			}
 		}
 	}
 	return false
 }
 
-func dfs(board [][]byte, i, j, index int, word string, memory map[State]bool) bool {
+func dfs(board [][]byte, i, j, index int, word string) bool {
 	if index == len(word) {
 		return true
 	}
 	if i < 0 || i >= len(board) || j < 0 || j >= len(board[0]) {
 		return false
 	}
-	if board[i][j] != word[index] || memory[State{i, j}] {
+	if board[i][j] != word[index] || board[i][j] == '*' {
 		return false
 	}
-	memory[State{i, j}] = true
-	if dfs(board, i+1, j, index+1, word, memory) ||
-		dfs(board, i-1, j, index+1, word, memory) ||
-		dfs(board, i, j+1, index+1, word, memory) ||
-		dfs(board, i, j-1, index+1, word, memory) {
+	tmp := board[i][j]
+	board[i][j] = '#'
+	if dfs(board, i+1, j, index+1, word) ||
+		dfs(board, i-1, j, index+1, word) ||
+		dfs(board, i, j+1, index+1, word) ||
+		dfs(board, i, j-1, index+1, word) {
 		return true
 	}
-	memory[State{i, j}] = false
+	board[i][j] = tmp
 	return false
 }
 
