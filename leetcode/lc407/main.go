@@ -1,5 +1,10 @@
 package main
 
+import (
+	"container/heap"
+	"fmt"
+)
+
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -7,61 +12,102 @@ func max(a, b int) int {
 	return b
 }
 
+type Pair struct {
+	dist, x, y int
+}
+
+type SmallHeap []Pair
+
+func (h SmallHeap) Len() int {
+	return len(h)
+}
+
+func (h SmallHeap) Less(i, j int) bool {
+	return h[i].dist < h[j].dist
+}
+
+func (h SmallHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+func (h *SmallHeap) Push(x interface{}) {
+	*h = append(*h, x.(Pair))
+}
+
+func (h *SmallHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
 func trapRainWater(heightMap [][]int) int {
 	m := len(heightMap)
-	if m == 0 {
-		return 0
-	}
 	n := len(heightMap[0])
-	aroundHeight := make([][]int, m+1)
-	searched := make([][]bool, m+1)
-	for i := 0; i <= len(aroundHeight); i++ {
-		aroundHeight[i] = make([]int, n+1)
-		searched[i] = make([]bool, n+1)
-	}
+	h := &SmallHeap{}
+
+	heap.Init(h)
+
+	visited := make([][]bool, m)
 	for i := 0; i < m; i++ {
-		searched[i][0] = true
-		searched[i][n-1] = true
-	}
-	for j := 0; j < n; j++ {
-		searched[0][j] = true
-		searched[m-1][j] = true
+		visited[i] = make([]bool, n)
 	}
 
-	for i := 1; i <= m; i++ {
-		for j := 1; j <= n; j++ {
-			if !searched[i][j] {
-				aroundHeight[i][j] = dfs(heightMap, aroundHeight, searched, i, j)
+	for i := 0; i < m; i++ {
+		heap.Push(h, Pair{heightMap[i][0], i, 0})
+		heap.Push(h, Pair{heightMap[i][n-1], i, n - 1})
+		visited[i][0] = true
+		visited[i][n-1] = true
+	}
+
+	for j := 1; j < n-1; j++ {
+		heap.Push(h, Pair{heightMap[0][j], 0, j})
+		heap.Push(h, Pair{heightMap[m-1][j], m - 1, j})
+		visited[0][j] = true
+		visited[m-1][j] = true
+	}
+
+	dirs := [][]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+
+	ans := 0
+
+	for h.Len() > 0 {
+		cur := heap.Pop(h).(Pair)
+		for _, dir := range dirs {
+			x := cur.x + dir[0]
+			y := cur.y + dir[1]
+			if x < 0 || x >= m || y < 0 || y >= n || visited[x][y] {
+				continue
 			}
+			if cur.dist > heightMap[x][y] {
+				ans += cur.dist - heightMap[x][y]
+			}
+			// 想象上一步之后，将 [x][y] 用水填充到 cur.dist 高度
+			// 这样， cur, [x][y] 之间高度相同，相当于将边界向内扩充了
+			heap.Push(h, Pair{max(cur.dist, heightMap[x][y]), x, y})
+			visited[x][y] = true
 		}
 	}
 
-	return 0
-}
-
-func dfs(heightMap [][]int, aroundHeight [][]int, searched [][]bool, i, j int) int {
-	if searched[i][j] && aroundHeight[i][j] != 0 {
-		return aroundHeight[i][j]
-	}
-	searched[i][j] = true
-	aroundHeight[i][j] = heightMap[i][j]
-	maxHeight := heightMap[i][j]
-	if i > 1 {
-		maxHeight = max(maxHeight, dfs(heightMap, aroundHeight, searched, i-1, j))
-	}
-	if j > 1 {
-		maxHeight = max(maxHeight, dfs(heightMap, aroundHeight, searched, i, j-1))
-	}
-	if i < len(heightMap) {
-		maxHeight = max(maxHeight, dfs(heightMap, aroundHeight, searched, i+1, j))
-	}
-	if j < len(heightMap[0]) {
-		maxHeight = max(maxHeight, dfs(heightMap, aroundHeight, searched, i, j+1))
-	}
-	aroundHeight[i][j] = maxHeight - heightMap[i][j]
-	return maxHeight
+	return ans
 }
 
 func main() {
+	var heightMap [][]int
+	heightMap = [][]int{
+		{1, 4, 3, 1, 3, 2},
+		{3, 2, 1, 3, 2, 4},
+		{2, 3, 3, 2, 3, 1},
+	}
+	fmt.Println(trapRainWater(heightMap))
 
+	heightMap = [][]int{
+		{3, 3, 3, 3, 3},
+		{3, 2, 2, 2, 3},
+		{3, 2, 2, 2, 3},
+		{3, 3, 3, 3, 3},
+	}
+
+	fmt.Println(trapRainWater(heightMap))
 }
